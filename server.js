@@ -8,12 +8,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ MySQL Connection
+// ✅ MySQL Connection (FIXED)
 const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT,
 });
 
 db.connect((err) => {
@@ -24,13 +25,11 @@ db.connect((err) => {
   }
 });
 
-// ✅ API: Get orders by email
+// ✅ API
 app.get("/api/my-orders", (req, res) => {
   const email = req.query.email;
 
-  if (!email) {
-    return res.json([]);
-  }
+  if (!email) return res.json([]);
 
   const sql = `
     SELECT order_id, status 
@@ -49,7 +48,6 @@ app.get("/api/my-orders", (req, res) => {
   });
 });
 
-// ✅ Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
