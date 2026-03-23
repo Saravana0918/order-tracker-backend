@@ -51,7 +51,7 @@ app.post("/webhook/order-created", express.json(), (req, res) => {
   console.log("📧 Email:", order.email);
 
   const orderId = "#" + order.id;
-  const email = order.email;
+  const email = order.customer?.email || order.email;
 
   const sql = `
     INSERT INTO order_progress (order_id, customer_email, status)
