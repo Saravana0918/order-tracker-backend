@@ -44,9 +44,11 @@ app.get("/api/my-orders", (req, res) => {
 });
 
 app.post("/webhook/order-created", express.json(), (req, res) => {
-  const order = req.body;
+  console.log("🔥 WEBHOOK HIT");
 
-  console.log("📦 New Order Received:", order.id);
+  const order = req.body;
+  console.log("📦 Order ID:", order.id);
+  console.log("📧 Email:", order.email);
 
   const orderId = "#" + order.id;
   const email = order.email;
