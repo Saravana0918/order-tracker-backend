@@ -43,6 +43,30 @@ app.get("/api/my-orders", (req, res) => {
   });
 });
 
+app.post("/webhook/order-created", express.json(), (req, res) => {
+  const order = req.body;
+
+  console.log("📦 New Order Received:", order.id);
+
+  const orderId = "#" + order.id;
+  const email = order.email;
+
+  const sql = `
+    INSERT INTO order_progress (order_id, customer_email, status)
+    VALUES (?, ?, ?)
+  `;
+
+  db.query(sql, [orderId, email, "design"], (err) => {
+    if (err) {
+      console.error("❌ DB insert error:", err);
+    } else {
+      console.log("✅ Order saved in DB");
+    }
+  });
+
+  res.sendStatus(200);
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
