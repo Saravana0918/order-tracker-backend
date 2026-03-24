@@ -89,6 +89,29 @@ app.get("/api/all-orders", (req, res) => {
   });
 });
 
+// ✅ UPDATE STATUS API (VERY IMPORTANT)
+app.post("/api/update-status", (req, res) => {
+  const { order_id, status } = req.body;
+
+  console.log("🛠 Update Request:", order_id, status);
+
+  const sql = `
+    UPDATE order_progress 
+    SET status = ?, updated_at = NOW()
+    WHERE order_id = ?
+  `;
+
+  db.query(sql, [status, order_id], (err, result) => {
+    if (err) {
+      console.error("❌ Update error:", err);
+      return res.status(500).json({ error: "DB error" });
+    }
+
+    console.log("✅ Status updated in DB");
+    res.json({ success: true });
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
