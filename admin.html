@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel</title>
+</head>
+<body>
+
+<h2>🔥 Order Management</h2>
+<div id="orders"></div>
+
+<script>
+async function loadOrders() {
+  const res = await fetch("https://order-tracker-backend-j3l4.onrender.com/api/all-orders");
+  const data = await res.json();
+
+  const container = document.getElementById("orders");
+
+  container.innerHTML = data.map(o => `
+    <div style="border:1px solid #ccc;padding:10px;margin-bottom:10px;">
+      <b>${o.order_id}</b><br>
+      ${o.customer_email}<br>
+      Current: <b>${o.status}</b><br><br>
+
+      <select onchange="updateStatus('${o.order_id}', this.value)">
+        <option value="">Change Status</option>
+        <option value="design">Design</option>
+        <option value="printing">Printing</option>
+        <option value="fusing">Fusing</option>
+        <option value="stitching">Stitching</option>
+        <option value="packing">Packing</option>
+      </select>
+    </div>
+  `).join("");
+}
+
+async function updateStatus(order_id, status) {
+  if (!status) return;
+
+  await fetch("https://order-tracker-backend-j3l4.onrender.com/api/update-status", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ order_id, status })
+  });
+
+  alert("✅ Status Updated");
+  loadOrders();
+}
+
+loadOrders();
+</script>
+
+</body>
+</html>

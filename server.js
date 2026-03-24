@@ -69,6 +69,23 @@ app.post("/webhook/order-created", express.json(), (req, res) => {
   res.sendStatus(200);
 });
 
+app.get("/api/all-orders", (req, res) => {
+  const sql = `
+    SELECT order_id, customer_email, status 
+    FROM order_progress
+    ORDER BY updated_at DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "DB error" });
+    }
+
+    res.json(results);
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
