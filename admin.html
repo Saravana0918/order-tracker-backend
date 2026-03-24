@@ -2,51 +2,258 @@
 <html>
 <head>
   <title>Admin Panel</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f6f9;
+      padding: 20px;
+    }
+
+    .login-box {
+      max-width: 300px;
+      margin: auto;
+      margin-top: 100px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    button {
+      padding: 10px;
+      width: 100%;
+      background: black;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .hidden { display: none; }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: black;
+      color: white;
+      padding: 10px;
+    }
+
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .pagination {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .pagination button {
+      padding: 5px 10px;
+      margin: 3px;
+      background: black;
+      color: white;
+      border: none;
+    }
+
+    .active-page {
+      background: green !important;
+    }
+  </style>
 </head>
+
 <body>
 
-<h2>🔥 Order Management</h2>
-<div id="orders"></div>
+<!-- LOGIN -->
+<div id="loginBox" class="login-box">
+  <h3>Admin Login</h3>
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="hidden">
+
+  <h2>🔥 Order Management</h2>
+
+  <div class="filters">
+    <input id="searchInput" placeholder="Search Order ID / Email" onkeyup="applyFilters()">
+    
+    <select id="statusFilter" onchange="applyFilters()">
+      <option value="">All Status</option>
+      <option value="design">Design</option>
+      <option value="printing">Printing</option>
+      <option value="fusing">Fusing</option>
+      <option value="stitching">Stitching</option>
+      <option value="packing">Packing</option>
+    </select>
+
+    <input type="date" id="dateFilter" onchange="applyFilters()">
+
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Update</th>
+        </tr>
+      </thead>
+      <tbody id="orders"></tbody>
+    </table>
+
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+</div>
 
 <script>
-async function loadOrders() {
-  const res = await fetch("https://order-tracker-backend-j3l4.onrender.com/api/all-orders");
-  const data = await res.json();
+let allOrders = [];
+let filteredOrders = [];
+let currentPage = 1;
+const rowsPerPage = 5;
 
-  const container = document.getElementById("orders");
+/* LOGIN */
+function login(){
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
 
-  container.innerHTML = data.map(o => `
-    <div style="border:1px solid #ccc;padding:10px;margin-bottom:10px;">
-      <b>${o.order_id}</b><br>
-      ${o.customer_email}<br>
-      Current: <b>${o.status}</b><br><br>
-
-      <select onchange="updateStatus('${o.order_id}', this.value)">
-        <option value="">Change Status</option>
-        <option value="design">Design</option>
-        <option value="printing">Printing</option>
-        <option value="fusing">Fusing</option>
-        <option value="stitching">Stitching</option>
-        <option value="packing">Packing</option>
-      </select>
-    </div>
-  `).join("");
+  if(u === "admin" && p === "1234"){
+    localStorage.setItem("adminLogin", "true");
+    showAdmin();
+  } else {
+    alert("Invalid login");
+  }
 }
 
-async function updateStatus(order_id, status) {
-  if (!status) return;
+function logout(){
+  localStorage.removeItem("adminLogin");
+  location.reload();
+}
 
-  await fetch("https://order-tracker-backend-j3l4.onrender.com/api/update-status", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ order_id, status })
-  });
-
-  alert("✅ Status Updated");
+function showAdmin(){
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("adminPanel").classList.remove("hidden");
   loadOrders();
 }
 
-loadOrders();
+if(localStorage.getItem("adminLogin") === "true"){
+  showAdmin();
+}
+
+/* LOAD DATA */
+async function loadOrders(){
+  const res = await fetch("https://order-tracker-backend-j3l4.onrender.com/api/all-orders");
+  allOrders = await res.json();
+
+  filteredOrders = allOrders;
+  renderTable();
+  renderPagination();
+}
+
+/* FILTER */
+function applyFilters(){
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  const status = document.getElementById("statusFilter").value;
+  const date = document.getElementById("dateFilter").value;
+
+  filteredOrders = allOrders.filter(o => {
+    return (
+      (o.order_id.toLowerCase().includes(search) ||
+       o.customer_email.toLowerCase().includes(search)) &&
+      (!status || o.status === status) &&
+      (!date || o.updated_at?.startsWith(date))
+    );
+  });
+
+  currentPage = 1;
+  renderTable();
+  renderPagination();
+}
+
+/* TABLE */
+function renderTable(){
+  const start = (currentPage - 1) * rowsPerPage;
+  const data = filteredOrders.slice(start, start + rowsPerPage);
+
+  document.getElementById("orders").innerHTML = data.map(o => `
+    <tr>
+      <td>${o.order_id}</td>
+      <td>${o.customer_email}</td>
+      <td>${o.status}</td>
+      <td>
+        <select onchange="updateStatus('${o.order_id}', this.value)">
+          <option value="">Change</option>
+          <option value="design">Design</option>
+          <option value="printing">Printing</option>
+          <option value="fusing">Fusing</option>
+          <option value="stitching">Stitching</option>
+          <option value="packing">Packing</option>
+        </select>
+      </td>
+    </tr>
+  `).join("");
+}
+
+/* PAGINATION */
+function renderPagination(){
+  const total = Math.ceil(filteredOrders.length / rowsPerPage);
+  let html = "";
+
+  for(let i=1;i<=total;i++){
+    html += `<button class="${i===currentPage?'active-page':''}" onclick="changePage(${i})">${i}</button>`;
+  }
+
+  document.getElementById("pagination").innerHTML = html;
+}
+
+function changePage(p){
+  currentPage = p;
+  renderTable();
+  renderPagination();
+}
+
+/* UPDATE */
+async function updateStatus(order_id, status){
+  if(!status) return;
+
+  await fetch("https://order-tracker-backend-j3l4.onrender.com/api/update-status", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({order_id, status})
+  });
+
+  alert("Updated");
+  loadOrders();
+}
 </script>
 
 </body>
