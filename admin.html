@@ -10,6 +10,10 @@
       padding: 20px;
     }
 
+    h2 {
+      margin-bottom: 15px;
+    }
+
     .login-box {
       max-width: 300px;
       margin: auto;
@@ -17,31 +21,37 @@
       background: white;
       padding: 20px;
       border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
       text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     }
 
-    input {
-      width: 100%;
+    input, select {
       padding: 10px;
-      margin: 10px 0;
+      margin: 5px;
     }
 
     button {
       padding: 10px;
-      width: 100%;
+      border: none;
       background: black;
       color: white;
-      border: none;
       cursor: pointer;
+      border-radius: 5px;
     }
 
     .hidden { display: none; }
 
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
     .card {
       background: white;
-      padding: 20px;
+      padding: 15px;
       border-radius: 10px;
+      box-shadow: 0 5px 10px rgba(0,0,0,0.1);
     }
 
     table {
@@ -60,27 +70,30 @@
       border-bottom: 1px solid #ddd;
     }
 
-    .filters {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
+    tr:hover {
+      background: #f1f1f1;
     }
 
     .pagination {
-      margin-top: 15px;
+      margin-top: 20px;
       text-align: center;
     }
 
     .pagination button {
-      padding: 5px 10px;
-      margin: 3px;
-      background: black;
-      color: white;
-      border: none;
+      padding: 8px 14px;
+      margin: 5px;
+      border-radius: 6px;
     }
 
     .active-page {
       background: green !important;
+    }
+
+    .info {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 14px;
+      color: #555;
     }
   </style>
 </head>
@@ -129,9 +142,11 @@
       </thead>
       <tbody id="orders"></tbody>
     </table>
-
-    <div class="pagination" id="pagination"></div>
   </div>
+
+  <!-- FIXED PAGINATION -->
+  <div class="pagination" id="pagination"></div>
+  <div class="info" id="info"></div>
 
 </div>
 
@@ -221,6 +236,9 @@ function renderTable(){
       </td>
     </tr>
   `).join("");
+
+  document.getElementById("info").innerText =
+    `Showing ${start + 1} to ${Math.min(start + rowsPerPage, filteredOrders.length)} of ${filteredOrders.length} orders`;
 }
 
 /* PAGINATION */
@@ -228,8 +246,16 @@ function renderPagination(){
   const total = Math.ceil(filteredOrders.length / rowsPerPage);
   let html = "";
 
+  if(currentPage > 1){
+    html += `<button onclick="changePage(${currentPage-1})">Prev</button>`;
+  }
+
   for(let i=1;i<=total;i++){
     html += `<button class="${i===currentPage?'active-page':''}" onclick="changePage(${i})">${i}</button>`;
+  }
+
+  if(currentPage < total){
+    html += `<button onclick="changePage(${currentPage+1})">Next</button>`;
   }
 
   document.getElementById("pagination").innerHTML = html;
@@ -251,7 +277,7 @@ async function updateStatus(order_id, status){
     body: JSON.stringify({order_id, status})
   });
 
-  alert("Updated");
+  alert("✅ Updated");
   loadOrders();
 }
 </script>
