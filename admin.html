@@ -126,6 +126,13 @@
     </select>
 
     <input type="date" id="dateFilter" onchange="applyFilters()">
+    <select id="rowsSelect" onchange="changeRows()">
+  <option value="5">5</option>
+  <option value="10">10</option>
+  <option value="25">25</option>
+  <option value="50" selected>50</option>
+  <option value="100">100</option>
+</select>
 
     <button onclick="logout()">Logout</button>
   </div>
@@ -154,7 +161,7 @@
 let allOrders = [];
 let filteredOrders = [];
 let currentPage = 1;
-const rowsPerPage = 5;
+let rowsPerPage = 50;
 
 /* LOGIN */
 function login(){
@@ -172,6 +179,13 @@ function login(){
 function logout(){
   localStorage.removeItem("adminLogin");
   location.reload();
+}
+
+function changeRows(){
+  rowsPerPage = parseInt(document.getElementById("rowsSelect").value);
+  currentPage = 1;
+  renderTable();
+  renderPagination();
 }
 
 function showAdmin(){
